@@ -23,10 +23,11 @@ public class Filtre {
         }
         String line;
         try{
-            do {
-                line = reader.readLine();
-                dictionnaire.add(line);
-            } while(line != null);
+            while((line = reader.readLine()) != null){
+                if (line.length() >= 3){
+                    dictionnaire.add(line);
+                }
+            }
         } catch (IOException e){
             e.printStackTrace();
             System.exit(-1);
