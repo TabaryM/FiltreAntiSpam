@@ -73,7 +73,7 @@ public class Filtre {
 
             //SPAM
             for(int j=0; j<mSpam; j++){
-                file = new File("baseapp/spam/"+j+".txt");
+                file = new File(getClass().getClassLoader().getResource("baseapp/spam/"+j+".txt").getFile());
                 lireMessage(file);
                 if(X[i]==1){
                     probasSpam[i]++;
@@ -82,7 +82,7 @@ public class Filtre {
 
             //HAM
             for(int j=0; j<mHam; j++){
-                file = new File("baseapp/ham/"+j+".txt");
+                file = new File(getClass().getClassLoader().getResource("baseapp/ham/"+j+".txt").getFile());
                 lireMessage(file);
                 if(X[i]==1){
                     probasHam[i]++;
@@ -116,25 +116,29 @@ public class Filtre {
         File file;
 
         for(int i = 0; i<m; i++){
-            probaPosterioriSpam = 1;
-            probaPosterioriHam = 1;
+            probaPosterioriSpam = 1.0;
+            probaPosterioriHam = 1.0;
+
+            file = new File(getClass().getClassLoader().getResource(cheminTest+type+i+".txt").getFile());
+            lireMessage(file);
 
             //Calcul des probabilités a posteriori
             for(int j=0; j<dictionnaire.size(); j++){
-                file = new File(cheminTest+type+j+".txt");
-                lireMessage(file);
                 if(X[j] == 1) {
                     probaPosterioriSpam *= probasSpam[j];
                     probaPosterioriHam *= probasHam[j];
                 }
                 else {
-                    probaPosterioriSpam *= 1 - probasSpam[j];
-                    probaPosterioriHam *= 1 - probasHam[j];
+                    probaPosterioriSpam *= (1 - probasSpam[j]);
+                    probaPosterioriHam *= (1 - probasHam[j]);
                 }
             }
 
             probaPosterioriSpam *= probaSpam;
             probaPosterioriHam *= probaHam;
+
+            System.out.println("proba spam : "+probaPosterioriSpam);
+            System.out.println("proba ham : "+probaPosterioriHam);
 
             //Évaluation
             if(probaPosterioriSpam > probaPosterioriHam) {
