@@ -128,8 +128,8 @@ public class Filtre {
         File file;
 
         for(int i = 0; i<m; i++){
-            probaPosterioriSpam = probaSpam;
-            probaPosterioriHam = probaHam;
+            probaPosterioriSpam = 1.0;
+            probaPosterioriHam = 1.0;
 
 //          file = new File(cheminTest+type+j+".txt");
             file = loadRessource(cheminTest+type+i+".txt");
@@ -141,8 +141,8 @@ public class Filtre {
                     probaPosterioriHam *= probasHam[j];
                 }
                 else {
-                    probaPosterioriSpam *= 1 - probasSpam[j];
-                    probaPosterioriHam *= 1 - probasHam[j];
+                    probaPosterioriSpam *= (1 - probasSpam[j]);
+                    probaPosterioriHam *= (1 - probasHam[j]);
                 }
             }
 
@@ -150,6 +150,9 @@ public class Filtre {
 //            probaPosterioriSpam *= probaSpam;
 //            probaPosterioriHam *= probaHam;
             System.out.printf("Proba a posteriori\tSpam : %.15f\tHam : %.15f\n", probaPosterioriSpam, probaPosterioriHam);
+
+            System.out.println("proba spam : "+probaPosterioriSpam);
+            System.out.println("proba ham : "+probaPosterioriHam);
 
             //Évaluation
             if(probaPosterioriSpam > probaPosterioriHam) {
