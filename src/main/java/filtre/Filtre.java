@@ -1,6 +1,7 @@
 package filtre;
 
 import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,9 +13,9 @@ public class Filtre {
     private double[] probasHam;
     private double probaSpam;
     private double probaHam;
-    private final ClassLoader classLoader = getClass().getClassLoader();
     private final double epsilon = 1.0;
-    private final String erreur = "\033[31m *** ERREUR *** \033[0m";
+
+    private final ClassLoader classLoader = getClass().getClassLoader();
 
     private int nbErreurSpam = 0;
     private int nbErreurHam = 0;
@@ -23,16 +24,9 @@ public class Filtre {
         chargerDictionnaire(loadRessource("dictionnaire1000en.txt"));
     }
 
-    public void chargerDictionnaire(File file){
+    public void chargerDictionnaire(BufferedReader reader){
         dictionnaire.clear();
         System.out.println("Chargement du dictionnaire...");
-        BufferedReader reader = null ;
-        try {
-            reader = new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException e){
-            e.printStackTrace();
-            System.exit(-1);
-        }
         String line;
         try{
             while((line = reader.readLine()) != null){
@@ -46,22 +40,15 @@ public class Filtre {
         }
     }
 
-    public void lireMessage(File file){
+    public void lireMessage(BufferedReader reader){
         X = new int[dictionnaire.size()];
-        BufferedReader reader = null ;
-        try {
-            reader = new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException e){
-            e.printStackTrace();
-            System.exit(-1);
-        }
 
         String[] mots;
         String ligne;
 
         try{
             while((ligne = reader.readLine()) != null){
-                mots = ligne.split(" ");
+                mots = ligne.split("[^a-zA-Z]");
                 for(String mot : mots){
                     if(dictionnaire.contains(mot.toUpperCase())){
                         X[dictionnaire.indexOf(mot.toUpperCase())] = 1;
@@ -82,14 +69,13 @@ public class Filtre {
             numMail.add(i);
         }
         Collections.shuffle(numMail);
-        File file;
+        BufferedReader reader;
 
         //Estimation des paramètres de distribution
         //SPAM
         for(int j = 0; j<mSpam; j++) {
-            file = loadRessource("baseapp/spam/" + numMail.get(j) + ".txt");
-//                file = new File("baseapp/spam/"+j+".txt");
-            lireMessage(file);
+            reader = loadRessource("baseapp/spam/" + numMail.get(j) + ".txt");
+            lireMessage(reader);
             for (int i = 0; i < dictionnaire.size(); i++) {
                 if (X[i] == 1) {
                     probasSpam[i] = probasSpam[i] + 1;
@@ -99,9 +85,8 @@ public class Filtre {
 
         //HAM
         for(int j = 0; j<mHam; j++){
-            file = loadRessource("baseapp/ham/"+ numMail.get(j+mSpam) +".txt");
-//                file = new File("baseapp/ham/"+j+".txt");
-            lireMessage(file);
+            reader = loadRessource("baseapp/ham/"+ numMail.get(j+mSpam) +".txt");
+            lireMessage(reader);
             for (int i = 0; i < dictionnaire.size(); i++) {
                 if(X[i]==1){
                     probasHam[i]++;
@@ -145,14 +130,14 @@ public class Filtre {
 
         Collections.shuffle(numMail);
 
-        File file;
+        BufferedReader reader;
 
         for(int i = 0; i<m; i++){
             probaPosterioriSpam = probaSpam;
             probaPosterioriHam = probaHam;
 
-            file = loadRessource(cheminTest+type+numMail.get(i)+".txt");
-            lireMessage(file);
+            reader = loadRessource(cheminTest+type+numMail.get(i)+".txt");
+            lireMessage(reader);
             //Calcul des probabilités a posteriori
             for(int j = 0; j<dictionnaire.size(); j++){
                 if(X[j] == 1) {
@@ -188,7 +173,26 @@ public class Filtre {
         }
     }
 
-    private File loadRessource(String URL){
-        return new File(classLoader.getResource(URL).getFile());
+    private BufferedReader loadRessource(String Url){
+        BufferedReader reader = null;
+
+        // Recherche l'Url dans les ressources du package
+        URL path = classLoader.getResource(Url);
+        if (path != null) {
+            // La ressource est trouvée, on retourne le bufferedReader demandé
+            InputStream is = classLoader.getResourceAsStream(Url);
+            InputStreamReader isr = new InputStreamReader(is);
+            reader = new BufferedReader(isr);
+            return reader;
+        }
+
+        // La ressource n'est pas trouvée, on la cherche à la racine du programme
+        try {
+            reader = new BufferedReader(new FileReader(new File(Url).getAbsolutePath()));
+        } catch (FileNotFoundException e) {
+            System.err.println("Le chemin vers la base de test n'est pas valide");
+            System.exit(-1);
+        }
+        return reader;
     }
 }
