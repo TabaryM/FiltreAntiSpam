@@ -118,15 +118,18 @@ public class Filtre {
         probaSpam = (double) mSpam/(mSpam+mHam);
         probaHam = 1-probaSpam;
 
-        System.out.printf("Proba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
+//        System.out.printf("Proba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
     }
 
     public void test(int mSpam, int mHam, String cheminTest){
         testType(mSpam, cheminTest, true);
         testType(mHam, cheminTest, false);
-        System.out.printf("Erreur de test sur les %d SPAM : \t%.15f\n", mSpam, ((float) nbErreurSpam/mSpam));
-        System.out.printf("Erreur de test sur les %d HAM : \t%.15f\n", mHam, ((float) nbErreurHam/mHam));
-        System.out.printf("Erreur de test globale sur %d mails : \t%.15f\n", (mHam+mSpam), ((float) (nbErreurHam + nbErreurSpam)/(mHam + mSpam)));
+        double errTestSpam = ((float) nbErreurSpam/mSpam)*100;
+        double errTestHam = ((float) nbErreurHam/mHam)*100;
+        double errTestGlobale = ((float) (nbErreurHam + nbErreurSpam)/(mHam + mSpam))*100;
+        System.out.printf("Erreur de test sur les %d SPAM : \t%.2f %s \n", mSpam, errTestSpam, '%');
+        System.out.printf("Erreur de test sur les %d HAM : \t%.2f %s \n", mHam, errTestHam, '%');
+        System.out.printf("Erreur de test globale sur %d mails : \t%.2f %s \n", (mHam+mSpam), errTestGlobale, '%');
     }
 
     private void testType(int m, String cheminTest, boolean spam){
@@ -163,21 +166,25 @@ public class Filtre {
             }
 
             //Évaluation
-            if(probaPosterioriSpam > probaPosterioriHam) {
-//                System.out.print("Message " + i + " est prédit comme SPAM");
-                if(!spam) {
-                    nbErreurHam++;
-//                    System.out.print("\t"+erreur);
+            if (spam) {
+                System.out.printf("SPAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
+                if(probaPosterioriSpam > probaPosterioriHam) {
+                    System.out.print(" => identifié comme un SPAM\n");
                 }
-            }
-            else {
-//                System.out.print("Message " + i + " est prédit comme HAM");
-                if(spam) {
+                else {
+                    System.out.print(" => identifié comme un HAM \033[31m*** ERREUR***\033[0m\n");
                     nbErreurSpam++;
-//                    System.out.print("\t"+erreur);
+                }
+            } else {
+                System.out.printf("HAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
+                if(probaPosterioriSpam > probaPosterioriHam) {
+                    System.out.print(" => identifié comme un SPAM \033[31m*** ERREUR***\033[0m\n");
+                    nbErreurHam++;
+                }
+                else {
+                    System.out.print(" => identifié comme un HAM\n");
                 }
             }
-//            System.out.println();
         }
     }
 

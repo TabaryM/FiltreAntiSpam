@@ -6,9 +6,9 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Combien de SPAM dans la base d'apprentissage ?");
+        System.out.print("Combien de SPAM dans la base d'apprentissage ? ");
         int mSpam = scanner.nextInt();
-        System.out.println("Combien de HAM dans la base d'apprentissage ?");
+        System.out.print("Combien de HAM dans la base d'apprentissage ? ");
         int mHam = scanner.nextInt();
 
         Filtre filtre = new Filtre();
