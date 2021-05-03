@@ -12,8 +12,11 @@ public class Filtre {
     private double probaSpam;
     private double probaHam;
     private final ClassLoader classLoader = getClass().getClassLoader();
-    private final double epsilon = 10e-5;
+    private final double epsilon = 1.0;
     private final String erreur = "\033[31m *** ERREUR *** \033[0m";
+
+    private int nbErreurSpam = 0;
+    private int nbErreurHam = 0;
 
     public Filtre(){
         chargerDictionnaire(loadRessource("dictionnaire1000en.txt"));
@@ -33,7 +36,7 @@ public class Filtre {
         try{
             while((line = reader.readLine()) != null){
                 if (line.length() >= 3){
-                    dictionnaire.add(line);
+                    dictionnaire.add(line.toUpperCase());
                 }
             }
         } catch (IOException e){
@@ -59,8 +62,8 @@ public class Filtre {
             while((ligne = reader.readLine()) != null){
                 mots = ligne.split(" ");
                 for(String mot : mots){
-                    if(dictionnaire.contains(mot)){
-                        X[dictionnaire.indexOf(mot)] = 1;
+                    if(dictionnaire.contains(mot.toUpperCase())){
+                        X[dictionnaire.indexOf(mot.toUpperCase())] = 1;
                     }
                 }
             }
@@ -115,24 +118,24 @@ public class Filtre {
     public void test(int mSpam, int mHam, String cheminTest){
         testType(mSpam, cheminTest, true);
         testType(mHam, cheminTest, false);
+        System.out.printf("Erreur de test sur les %d SPAM : \t%.15f\n", mSpam, ((float) nbErreurSpam/mSpam));
+        System.out.printf("Erreur de test sur les %d HAM : \t%.15f\n", mHam, ((float) nbErreurHam/mHam));
+        System.out.printf("Erreur de test globale sur %d mails : \t%.15f\n", (mHam+mSpam), ((float) (nbErreurHam + nbErreurSpam)/(mHam + mSpam)));
     }
 
     private void testType(int m, String cheminTest, boolean spam){
         double probaPosterioriSpam;
         double probaPosterioriHam;
         String type;
-        if(spam)
-            type = "/spam/";
-        else
-            type = "/ham/";
+        if(spam) type = "/spam/";
+        else type = "/ham/";
 
         File file;
 
         for(int i = 0; i<m; i++){
-            probaPosterioriSpam = 1.0;
-            probaPosterioriHam = 1.0;
+            probaPosterioriSpam = probaSpam;
+            probaPosterioriHam = probaHam;
 
-//          file = new File(cheminTest+type+j+".txt");
             file = loadRessource(cheminTest+type+i+".txt");
             lireMessage(file);
             //Calcul des probabilités a posteriori
@@ -145,28 +148,27 @@ public class Filtre {
                     probaPosterioriSpam *= (1 - probasSpam[j]);
                     probaPosterioriHam *= (1 - probasHam[j]);
                 }
-//                System.out.printf("mot  : %s\tpresence : %d\tspam : %.8f\tham : %.8f\n",dictionnaire.get(j), X[j], probasSpam[j], probasHam[j]);
-//                System.out.printf("Proba a posteriori\tSpam : %.15f\tHam : %.15f\n", probaPosterioriSpam, probaPosterioriHam);
             }
 
-            System.out.printf("\nProba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
-            probaPosterioriSpam *= probaSpam;
-            probaPosterioriHam *= probaHam;
-            System.out.printf("Proba a posteriori\tSpam : %.15f\tHam : %.15f\n", probaPosterioriSpam, probaPosterioriHam);
+//            System.out.printf("\nProba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
+//            System.out.printf("Proba a posteriori\tSpam : %.15f\tHam : %.15f\n", probaPosterioriSpam, probaPosterioriHam);
 
             //Évaluation
             if(probaPosterioriSpam > probaPosterioriHam) {
-                System.out.print("Message " + i + " est prédit comme SPAM");
-                if(!spam)
-                    System.out.print("\t"+erreur);
+//                System.out.print("Message " + i + " est prédit comme SPAM");
+                if(!spam) {
+                    nbErreurHam++;
+//                    System.out.print("\t"+erreur);
+                }
             }
-
             else {
-                System.out.print("Message " + i + " est prédit comme HAM");
-                if(spam)
-                    System.out.print("\t"+erreur);
+//                System.out.print("Message " + i + " est prédit comme HAM");
+                if(spam) {
+                    nbErreurSpam++;
+//                    System.out.print("\t"+erreur);
+                }
             }
-            System.out.println();
+//            System.out.println();
         }
     }
 
