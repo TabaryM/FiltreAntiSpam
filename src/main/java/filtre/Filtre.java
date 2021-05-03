@@ -2,6 +2,7 @@ package filtre;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Filtre {
@@ -76,12 +77,17 @@ public class Filtre {
     public void apprentissage(int mSpam, int mHam){
         probasSpam = new double[dictionnaire.size()];
         probasHam = new double[dictionnaire.size()];
+        List<Integer> numMail = new ArrayList<>(mSpam+mHam);
+        for(int i = 0; i<mHam+mSpam; i++){
+            numMail.add(i);
+        }
+        Collections.shuffle(numMail);
         File file;
 
         //Estimation des paramètres de distribution
         //SPAM
         for(int j = 0; j<mSpam; j++) {
-            file = loadRessource("baseapp/spam/" + j + ".txt");
+            file = loadRessource("baseapp/spam/" + numMail.get(j) + ".txt");
 //                file = new File("baseapp/spam/"+j+".txt");
             lireMessage(file);
             for (int i = 0; i < dictionnaire.size(); i++) {
@@ -93,7 +99,7 @@ public class Filtre {
 
         //HAM
         for(int j = 0; j<mHam; j++){
-            file = loadRessource("baseapp/ham/"+j+".txt");
+            file = loadRessource("baseapp/ham/"+ numMail.get(j+mSpam) +".txt");
 //                file = new File("baseapp/ham/"+j+".txt");
             lireMessage(file);
             for (int i = 0; i < dictionnaire.size(); i++) {
@@ -129,6 +135,12 @@ public class Filtre {
         String type;
         if(spam) type = "/spam/";
         else type = "/ham/";
+        List<Integer> numMail = new ArrayList<>(m);
+        for(int i = 0; i<m; i++){
+            numMail.add(i);
+        }
+
+        Collections.shuffle(numMail);
 
         File file;
 
@@ -136,7 +148,7 @@ public class Filtre {
             probaPosterioriSpam = probaSpam;
             probaPosterioriHam = probaHam;
 
-            file = loadRessource(cheminTest+type+i+".txt");
+            file = loadRessource(cheminTest+type+numMail.get(i)+".txt");
             lireMessage(file);
             //Calcul des probabilités a posteriori
             for(int j = 0; j<dictionnaire.size(); j++){
@@ -149,9 +161,6 @@ public class Filtre {
                     probaPosterioriHam *= (1 - probasHam[j]);
                 }
             }
-
-//            System.out.printf("\nProba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
-//            System.out.printf("Proba a posteriori\tSpam : %.15f\tHam : %.15f\n", probaPosterioriSpam, probaPosterioriHam);
 
             //Évaluation
             if(probaPosterioriSpam > probaPosterioriHam) {
