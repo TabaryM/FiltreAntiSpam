@@ -12,6 +12,8 @@ public class Filtre {
     private double probaSpam;
     private double probaHam;
     private final ClassLoader classLoader = getClass().getClassLoader();
+    private final double epsilon = 10e-5;
+    private final String erreur = "\033[31m *** ERREUR *** \033[0m";
 
     public Filtre(){
         chargerDictionnaire(loadRessource("dictionnaire1000en.txt"));
@@ -69,7 +71,6 @@ public class Filtre {
     }
 
     public void apprentissage(int mSpam, int mHam){
-
         probasSpam = new double[dictionnaire.size()];
         probasHam = new double[dictionnaire.size()];
         File file;
@@ -82,7 +83,7 @@ public class Filtre {
             lireMessage(file);
             for (int i = 0; i < dictionnaire.size(); i++) {
                 if (X[i] == 1) {
-                    probasSpam[i]++;
+                    probasSpam[i] = probasSpam[i] + 1;
                 }
             }
         }
@@ -100,8 +101,8 @@ public class Filtre {
         }
 
         for (int i = 0; i < dictionnaire.size(); i++) {
-            probasSpam[i] = probasSpam[i] / mSpam;
-            probasHam[i] = probasHam[i] / mHam;
+            probasSpam[i] = (probasSpam[i] + epsilon) / (mSpam + 2*epsilon);
+            probasHam[i] = (probasHam[i] + epsilon) / (mHam + 2*epsilon);
         }
 
         //Estimation des probabilités a priori
@@ -144,27 +145,26 @@ public class Filtre {
                     probaPosterioriSpam *= (1 - probasSpam[j]);
                     probaPosterioriHam *= (1 - probasHam[j]);
                 }
+//                System.out.printf("mot  : %s\tpresence : %d\tspam : %.8f\tham : %.8f\n",dictionnaire.get(j), X[j], probasSpam[j], probasHam[j]);
+//                System.out.printf("Proba a posteriori\tSpam : %.15f\tHam : %.15f\n", probaPosterioriSpam, probaPosterioriHam);
             }
 
             System.out.printf("\nProba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
-//            probaPosterioriSpam *= probaSpam;
-//            probaPosterioriHam *= probaHam;
+            probaPosterioriSpam *= probaSpam;
+            probaPosterioriHam *= probaHam;
             System.out.printf("Proba a posteriori\tSpam : %.15f\tHam : %.15f\n", probaPosterioriSpam, probaPosterioriHam);
-
-            System.out.println("proba spam : "+probaPosterioriSpam);
-            System.out.println("proba ham : "+probaPosterioriHam);
 
             //Évaluation
             if(probaPosterioriSpam > probaPosterioriHam) {
                 System.out.print("Message " + i + " est prédit comme SPAM");
                 if(!spam)
-                    System.out.print("\t*** ERREUR ***");
+                    System.out.print("\t"+erreur);
             }
 
             else {
                 System.out.print("Message " + i + " est prédit comme HAM");
                 if(spam)
-                    System.out.print("\t*** ERREUR ***");
+                    System.out.print("\t"+erreur);
             }
             System.out.println();
         }

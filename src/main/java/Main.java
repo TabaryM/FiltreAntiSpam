@@ -12,7 +12,6 @@ public class Main {
         int mHam = scanner.nextInt();
 
         Filtre filtre = new Filtre();
-        filtre.chargerDictionnaire(new File(Main.class.getClassLoader().getResource("dictionnaire1000en.txt").getFile()));
         System.out.println("Apprentissage...");
         filtre.apprentissage(mSpam, mHam);
 
