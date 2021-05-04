@@ -14,6 +14,9 @@ public class Filtre {
     private double probaHam;
     private final ClassLoader classLoader = getClass().getClassLoader();
     private final double epsilon = 1.0;
+    double errTestSpam;
+    double errTestHam;
+    double errTestGlobale;
     private final String erreur = "\033[31m *** ERREUR *** \033[0m";
 
     private int nbErreurSpam = 0;
@@ -23,9 +26,13 @@ public class Filtre {
         chargerDictionnaire(loadRessource("dictionnaire1000en.txt"));
     }
 
+    /**
+     * Charge le dictionnaire donné en paramètre
+     * @param file fichier texte comprenant les mots du dictionnaire
+     */
     public void chargerDictionnaire(File file){
         dictionnaire.clear();
-        System.out.println("Chargement du dictionnaire...");
+        //System.out.println("Chargement du dictionnaire...");
         BufferedReader reader = null ;
         try {
             reader = new BufferedReader(new FileReader(file));
@@ -46,6 +53,11 @@ public class Filtre {
         }
     }
 
+    /**
+     * Parcours un mail et retranscrit cette lecture par un vecteur binaire X
+     * X[i]=1 --> le mot i apparaît dans ce mail
+     * @param file fichier texte correspondant au mail
+     */
     public void lireMessage(File file){
         X = new int[dictionnaire.size()];
         BufferedReader reader = null ;
@@ -74,6 +86,12 @@ public class Filtre {
         }
     }
 
+    /**
+     * Lance l'apprentissage sur le nombre de mails donné
+     * Le dossier de la base d'apprentissage est ressources/baseapp
+     * @param mSpam nombre de mails spams dans la base d'apprentissage
+     * @param mHam nombre de mails hams dans la base d'apprentissage
+     */
     public void apprentissage(int mSpam, int mHam){
         probasSpam = new double[dictionnaire.size()];
         probasHam = new double[dictionnaire.size()];
@@ -121,17 +139,30 @@ public class Filtre {
 //        System.out.printf("Proba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
     }
 
+    /**
+     * Lance la classification pour les spams et les hams sur un nombre de mail donné
+     * Affiche les erreurs de test
+     * @param mSpam nombre de mails spams dans la base de test
+     * @param mHam nombre de mails hams dans la base de test
+     * @param cheminTest chemin vers le dossier de la base de test
+     */
     public void test(int mSpam, int mHam, String cheminTest){
         testType(mSpam, cheminTest, true);
         testType(mHam, cheminTest, false);
-        double errTestSpam = ((float) nbErreurSpam/mSpam)*100;
-        double errTestHam = ((float) nbErreurHam/mHam)*100;
-        double errTestGlobale = ((float) (nbErreurHam + nbErreurSpam)/(mHam + mSpam))*100;
+        errTestSpam = ((float) nbErreurSpam/mSpam)*100;
+        errTestHam = ((float) nbErreurHam/mHam)*100;
+        errTestGlobale = ((float) (nbErreurHam + nbErreurSpam)/(mHam + mSpam))*100;
         System.out.printf("Erreur de test sur les %d SPAM : \t%.2f %s \n", mSpam, errTestSpam, '%');
         System.out.printf("Erreur de test sur les %d HAM : \t%.2f %s \n", mHam, errTestHam, '%');
         System.out.printf("Erreur de test globale sur %d mails : \t%.2f %s \n", (mHam+mSpam), errTestGlobale, '%');
     }
 
+    /**
+     * Lance la classification pour un type de mail donné (ham/spam)
+     * @param m nombre de mails de cette catégorie dans la base de test
+     * @param cheminTest chemin vers le dossier de la base de test
+     * @param spam true si l'on classifie des spams
+     */
     private void testType(int m, String cheminTest, boolean spam){
         double probaPosterioriSpam;
         double probaPosterioriHam;
@@ -167,28 +198,70 @@ public class Filtre {
 
             //Évaluation
             if (spam) {
-                System.out.printf("SPAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
+                //System.out.printf("SPAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
                 if(probaPosterioriSpam > probaPosterioriHam) {
-                    System.out.print(" => identifié comme un SPAM\n");
+                   // System.out.print(" => identifié comme un SPAM\n");
                 }
                 else {
-                    System.out.print(" => identifié comme un HAM \033[31m*** ERREUR***\033[0m\n");
+                    //System.out.print(" => identifié comme un HAM \033[31m*** ERREUR***\033[0m\n");
                     nbErreurSpam++;
                 }
             } else {
-                System.out.printf("HAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
+                //System.out.printf("HAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
                 if(probaPosterioriSpam > probaPosterioriHam) {
-                    System.out.print(" => identifié comme un SPAM \033[31m*** ERREUR***\033[0m\n");
+                    //System.out.print(" => identifié comme un SPAM \033[31m*** ERREUR***\033[0m\n");
                     nbErreurHam++;
                 }
                 else {
-                    System.out.print(" => identifié comme un HAM\n");
+                    //System.out.print(" => identifié comme un HAM\n");
                 }
             }
         }
     }
 
+    /**
+     * Charge le fichier correspondant au chemin donné
+     * @param URL chemin vers le fichier désiré
+     * @return le File correspondant au fichier
+     */
     private File loadRessource(String URL){
         return new File(classLoader.getResource(URL).getFile());
+    }
+
+    /**
+     * Lance l'évaluation de la classification pour différentes nombre de mails dans les bases d'apprentissage et de test
+     * @param cheminTest chemin vers le dossier de la base de test
+     */
+    public void evaluation(String cheminTest) {
+        File evalRep = new File("evaluation");
+        if(!evalRep.exists())
+            evalRep.mkdir();
+        File evalFile = new File("evaluation/eval.txt");
+        try {
+            FileWriter writer = new FileWriter(evalFile);
+            writer.write("mSpam\tmHam\tErreurSpam\tErreurHam\tErreurGlobale\n");
+            int mSpam = 0;
+            int mHam = 0;
+            for(int i=0; i<100; i++){
+                mSpam += 5;
+                mHam += 5;
+                launch(mSpam,mHam, cheminTest);
+                writer.write(mSpam+"\t"+mHam+"\t"+errTestSpam+"\t"+errTestHam+"\t"+errTestGlobale+"\n");
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Lance l'apprentissage suivie de la classification
+     * @param mSpam nombre de spams dans les bases d'apprentissage et de test
+     * @param mHam nombre de hams dans les bases d'apprentissage et de test
+     * @param cheminTest chemin vers le dossier de la base de test
+     */
+    private void launch(int mSpam, int mHam, String cheminTest){
+        apprentissage(mSpam, mHam);
+        test(mSpam, mHam, cheminTest);
     }
 }
