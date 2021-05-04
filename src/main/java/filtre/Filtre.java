@@ -147,6 +147,8 @@ public class Filtre {
      * @param cheminTest chemin vers le dossier de la base de test
      */
     public void test(int mSpam, int mHam, String cheminTest){
+        nbErreurHam = 0;
+        nbErreurSpam = 0;
         testType(mSpam, cheminTest, true);
         testType(mHam, cheminTest, false);
         errTestSpam = ((float) nbErreurSpam/mSpam)*100;
@@ -239,14 +241,16 @@ public class Filtre {
         File evalFile = new File("evaluation/eval.txt");
         try {
             FileWriter writer = new FileWriter(evalFile);
-            writer.write("mSpam\tmHam\tErreurSpam\tErreurHam\tErreurGlobale\n");
-            int mSpam = 0;
-            int mHam = 0;
-            for(int i=0; i<100; i++){
-                mSpam += 5;
-                mHam += 5;
-                launch(mSpam,mHam, cheminTest);
-                writer.write(mSpam+"\t"+mHam+"\t"+errTestSpam+"\t"+errTestHam+"\t"+errTestGlobale+"\n");
+            writer.write("mSpam\tmHam\tm\tErreurSpam\tErreurHam\tErreurGlobale\n");
+            int mHam = 50;
+            while(mHam<=250) {
+                int mSpam = 0;
+                for (int i = 0; i < 5; i++) {
+                    mSpam += 50;
+                    launch(mSpam, mHam, cheminTest);
+                    writer.write(mSpam + "\t" + mHam + "\t" + (mSpam + mHam) + "\t" + errTestSpam + "\t" + errTestHam + "\t" + errTestGlobale + "\n");
+                }
+                mHam +=50;
             }
             writer.close();
         } catch (IOException e) {
