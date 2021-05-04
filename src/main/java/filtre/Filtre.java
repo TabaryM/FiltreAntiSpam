@@ -30,7 +30,7 @@ public class Filtre {
 
     /**
      * Charge le dictionnaire donné en paramètre
-     * @param file fichier texte comprenant les mots du dictionnaire
+     * @param reader fichier texte comprenant les mots du dictionnaire
      */
     public void chargerDictionnaire(BufferedReader reader){
         dictionnaire.clear();
@@ -51,7 +51,7 @@ public class Filtre {
     /**
      * Parcours un mail et retranscrit cette lecture par un vecteur binaire X
      * X[i]=1 --> le mot i apparaît dans ce mail
-     * @param file fichier texte correspondant au mail
+     * @param reader fichier texte correspondant au mail
      */
     public void lireMessage(BufferedReader reader){
         X = new int[dictionnaire.size()];
@@ -209,11 +209,9 @@ public class Filtre {
 
     /**
      * Charge le fichier correspondant au chemin donné
-     * @param URL chemin vers le fichier désiré
+     * @param Url chemin vers le fichier désiré
      * @return le File correspondant au fichier
      */
-    private File loadRessource(String URL){
-        return new File(classLoader.getResource(URL).getFile());
     private BufferedReader loadRessource(String Url){
         BufferedReader reader = null;
 
