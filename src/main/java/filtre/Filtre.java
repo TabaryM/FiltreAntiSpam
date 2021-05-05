@@ -3,7 +3,6 @@ package filtre;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Filtre {
@@ -50,24 +49,83 @@ public class Filtre {
     }
 
     public Filtre(String filtreParam) {
-        chargeParam(loadRessource(filtreParam));
+        chargeClassifieur(loadRessource(filtreParam));
     }
 
-    private void chargeParam(BufferedReader reader) {
-        System.out.println("Chargement des paramètres du filtre");
-        ArrayList<Double> spamProbas = new ArrayList<>();
-        ArrayList<Double> hamProbas = new ArrayList<>();
+    // Bonus 2
+    public Filtre(String pathToClassifieur, String pathToMail, String spam) {
+        BufferedReader reader = loadRessource(pathToClassifieur);
+        ArrayList<Integer> spamProbas = new ArrayList<>();
+        ArrayList<Integer> hamProbas = new ArrayList<>();
         String line;
+        int mSpam = 0, mHam = 0;
         try{
             String[] elems;
             line = reader.readLine();
             elems = line.split(";");
-            assert(elems[0].equals("MOT") && elems[1].equals("ProbaSpam") && elems[2].equals("ProbaHam")):"Mauvais format de fichier";
+            assert(elems[0].equals("MOT") && elems[1].equals("Spam") && elems[2].equals("Ham")):"Mauvais format de fichier";
 
             line = reader.readLine();
             elems = line.split(";");
-            probaSpam = Double.parseDouble(elems[1]);
-            probaHam = Double.parseDouble(elems[2]);
+            mSpam = Integer.parseInt(elems[1]);
+            mHam = Integer.parseInt(elems[2]);
+
+            if (spam.equals("SPAM")) mSpam++;
+            else if (spam.equals("HAM")) mHam++;
+            else {
+                System.err.println("Veuillez dire si le mail est un \"SPAM\" ou un \"HAM\"");
+                System.exit(-1);
+            }
+
+            while((line = reader.readLine()) != null){
+                elems = line.split(";");
+                dictionnaire.add(elems[0]);
+                spamProbas.add(Integer.parseInt(elems[1]));
+                hamProbas.add(Integer.parseInt(elems[2]));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        lireMessage(loadRessource(pathToMail));
+
+        // On compte le nombre de spam qui contienne le mot X
+        probasSpam = new double[spamProbas.size()];
+        for (int i = 0; i < spamProbas.size(); i++){
+            probasSpam[i] = spamProbas.get(i);
+        }
+        // On compte le nombre de ham qui contienne le mot X
+        probasHam = new double[hamProbas.size()];
+        for (int i = 0; i < hamProbas.size(); i++){
+            probasHam[i] = hamProbas.get(i);
+        }
+
+        // Mise à jour des probas
+        for (int i = 0; i < dictionnaire.size(); i++) {
+            if (X[i] == 1) {
+                if (spam.equals("SPAM")) probasSpam[i]++;
+                else probasHam[i]++;
+            }
+        }
+
+        saveApprentissage(mSpam, mHam, pathToClassifieur);
+    }
+
+    private void chargeClassifieur(BufferedReader reader) {
+        System.out.println("Chargement des paramètres du filtre");
+        ArrayList<Double> spamProbas = new ArrayList<>();
+        ArrayList<Double> hamProbas = new ArrayList<>();
+        String line;
+        int mSpam = 0, mHam = 0;
+        try{
+            String[] elems;
+            line = reader.readLine();
+            elems = line.split(";");
+            assert(elems[0].equals("MOT") && elems[1].equals("Spam") && elems[2].equals("Ham")):"Mauvais format de fichier";
+
+            line = reader.readLine();
+            elems = line.split(";");
+            mSpam = Integer.parseInt(elems[1]);
+            mHam = Integer.parseInt(elems[2]);
 
             while((line = reader.readLine()) != null){
                 elems = line.split(";");
@@ -81,12 +139,14 @@ public class Filtre {
 
         probasSpam = new double[spamProbas.size()];
         for (int i = 0; i < spamProbas.size(); i++){
-            probasSpam[i] = spamProbas.get(i);
+            probasSpam[i] = (spamProbas.get(i) + epsilon) / (mSpam + 2*epsilon);
         }
         probasHam = new double[hamProbas.size()];
         for (int i = 0; i < hamProbas.size(); i++){
-            probasHam[i] = hamProbas.get(i);
+            probasHam[i] = (hamProbas.get(i) + epsilon) / (mHam + 2*epsilon);
         }
+        probaSpam = (double) mSpam/(mSpam+mHam);
+        probaHam = 1-probaSpam;
     }
 
     /**
@@ -121,31 +181,29 @@ public class Filtre {
      * @param mSpam nombre de mails spams dans la base d'apprentissage
      * @param mHam nombre de mails hams dans la base d'apprentissage
      */
-    public void apprentissage(int mSpam, int mHam){
+    public void apprentissage(int mSpam, int mHam, String pathToBaseApp){
         probasSpam = new double[dictionnaire.size()];
         probasHam = new double[dictionnaire.size()];
         List<Integer> numMail = new ArrayList<>(mSpam+mHam);
-        for(int i = 0; i<mHam+mSpam; i++){
+        for(int i = 0; i< (mHam + mSpam) ; i++){
             numMail.add(i);
         }
 //        Collections.shuffle(numMail);
         BufferedReader reader;
-
         //Estimation des paramètres de distribution
         //SPAM
-        for(int j = 0; j<mSpam; j++) {
-            reader = loadRessource("baseapp/spam/" + numMail.get(j) + ".txt");
+        for(int j = 0; j < mSpam; j++) {
+            reader = loadRessource(pathToBaseApp+"/spam/" + numMail.get(j) + ".txt");
             lireMessage(reader);
             for (int i = 0; i < dictionnaire.size(); i++) {
                 if (X[i] == 1) {
-                    probasSpam[i] = probasSpam[i] + 1;
+                    probasSpam[i]++;
                 }
             }
         }
-
         //HAM
-        for(int j = 0; j<mHam; j++){
-            reader = loadRessource("baseapp/ham/"+ numMail.get(j+mSpam) +".txt");
+        for(int j = 0; j < mHam; j++){
+            reader = loadRessource(pathToBaseApp+"/ham/"+ numMail.get(j+mSpam) +".txt");
             lireMessage(reader);
             for (int i = 0; i < dictionnaire.size(); i++) {
                 if(X[i]==1){
@@ -153,17 +211,40 @@ public class Filtre {
                 }
             }
         }
-
         for (int i = 0; i < dictionnaire.size(); i++) {
             probasSpam[i] = (probasSpam[i] + epsilon) / (mSpam + 2*epsilon);
             probasHam[i] = (probasHam[i] + epsilon) / (mHam + 2*epsilon);
         }
-
         //Estimation des probabilités a priori
         probaSpam = (double) mSpam/(mSpam+mHam);
         probaHam = 1-probaSpam;
+    }
 
-//        System.out.printf("Proba a priori\tSpam : %.15f\tHam : %.15f\n", probaSpam, probaHam);
+    public void testUnique(String pathToMail) {
+        BufferedReader reader = loadRessource(pathToMail);
+        lireMessage(reader);
+
+        double probaPosterioriSpam = probaSpam;
+        double probaPosterioriHam = probaHam;
+
+        //Calcul des probabilités a posteriori
+        for(int j = 0; j<dictionnaire.size(); j++){
+            if(X[j] == 1) {
+                probaPosterioriSpam *= probasSpam[j];
+                probaPosterioriHam *= probasHam[j];
+            }
+            else {
+                probaPosterioriSpam *= (1 - probasSpam[j]);
+                probaPosterioriHam *= (1 - probasHam[j]);
+            }
+        }
+
+        if(probaPosterioriSpam > probaPosterioriHam) {
+            if (verbose) System.out.print("D'après le classifieur donné en paramètre, le message "+pathToMail+" est un SPAM !!\n");
+        }
+        else {
+            if (verbose) System.out.print("D'après le classifieur donné en paramètre, le message "+pathToMail+" est un HAM\n");
+        }
     }
 
     /**
@@ -255,14 +336,14 @@ public class Filtre {
      * @param Url chemin vers le fichier désiré
      * @return le File correspondant au fichier
      */
-    private BufferedReader loadRessource(String Url){
+    private static BufferedReader loadRessource(String Url){
         BufferedReader reader = null;
 
         // Recherche l'Url dans les ressources du package
-        URL path = getClass().getClassLoader().getResource(Url);
+        URL path = Filtre.class.getClassLoader().getResource(Url);
         if (path != null) {
             // La ressource est trouvée, on retourne le bufferedReader demandé
-            InputStream is = getClass().getClassLoader().getResourceAsStream(Url);
+            InputStream is = Filtre.class.getClassLoader().getResourceAsStream(Url);
             InputStreamReader isr = new InputStreamReader(is);
             reader = new BufferedReader(isr);
             return reader;
@@ -288,6 +369,8 @@ public class Filtre {
         nbTestHam = nbTestSpam = 5;
         int step = 50;
         double[] erreursTestGlobal = new double[nbTestHam * nbTestSpam];
+        double[] erreursTestSpam = new double[nbTestHam * nbTestSpam];
+        double[] erreursTestHam = new double[nbTestHam * nbTestSpam];
         int mHam;
         int mSpam;
 
@@ -296,8 +379,11 @@ public class Filtre {
             mSpam = step;
             for (int j = 0; j < nbTestSpam; j++) {
                 launch(mSpam, mHam, "basetest");
+                erreursTestSpam[i*nbTestHam + j] = errTestSpam;
+                erreursTestHam[i*nbTestHam + j] = errTestHam;
                 erreursTestGlobal[i*nbTestHam + j] = errTestGlobale;
-//                System.out.printf("mSpam : %d\tmHam : %d\terrTestGlobale : %f\n", mSpam, mHam, errTestGlobale);
+                System.out.printf("mSpam : %d\tmHam : %d\terrSpam : %.2f\terrHam : %.2f\terrTestGlobale : %.2f\n"
+                        , mSpam, mHam, errTestSpam, errTestHam, errTestGlobale);
                 mSpam += step;
             }
             mHam += step;
@@ -308,7 +394,7 @@ public class Filtre {
         double minErr = Double.MAX_VALUE;
         for (int i = 0; i < nbTestHam; i++) {
             for (int j = 0; j < nbTestSpam; j++) {
-                System.out.printf("i=%d\tj=%d\t(i*nbTestHam + j) = %d\terreursTestGlobal[i*nbTestHam + j] = %f\n",i , j, (i*nbTestHam + j), erreursTestGlobal[i*nbTestHam + j]);
+//                System.out.printf("i=%d\tj=%d\t(i*nbTestHam + j) = %d\terreursTestGlobal[i*nbTestHam + j] = %f\n",i , j, (i*nbTestHam + j), erreursTestGlobal[i*nbTestHam + j]);
                 if(erreursTestGlobal[i*nbTestHam + j] < minErr){
                     indiceMinHam = i;
                     indiceMinSpam = j;
@@ -316,11 +402,12 @@ public class Filtre {
                 }
             }
         }
+        int indiceMin = indiceMinHam*nbTestHam + indiceMinSpam;
 
         mSpam = (indiceMinSpam + 1) * step;
         mHam = (indiceMinHam + 1) * step;
-//        System.out.printf("Meilleur indice Spam=%d\tHam=%d\n", indiceMinSpam, indiceMinHam);
-        System.out.printf("Meilleur indice : %d\tmSpam=%d\tmHam=%d\n",(indiceMinHam*nbTestHam + indiceMinSpam), mSpam, mHam);
+        System.out.printf("Meilleur configuration d'apprentissage trouvé :\tmSpam=%d\tmHam=%d\n\tErreur Spam : %.2f\tErreur Ham : %.2f\tErreur Globale : %.2f\n"
+                , mSpam, mHam, erreursTestSpam[indiceMin], erreursTestHam[indiceMin], erreursTestGlobal[indiceMin]);
 
         // On enregistre l'apprentissage avec ces paramètres
         saveApprentissage(mSpam, mHam, saveApprentissage);
@@ -333,7 +420,7 @@ public class Filtre {
      * @param cheminTest chemin vers le dossier de la base de test
      */
     private void launch(int mSpam, int mHam, String cheminTest){
-        apprentissage(mSpam, mHam);
+        apprentissage(mSpam, mHam, "baseapp");
         test(mSpam, mHam, cheminTest);
     }
 
@@ -439,19 +526,42 @@ public class Filtre {
         }
     }
 
-    private void saveApprentissage(int nbSpam, int nbHam, String out){
+    // Bonus 2
+    public void saveApprentissage(int nbSpam, int nbHam, String out){
         File file = new File(out);
-        apprentissage(nbSpam, nbHam);
+//        apprentissage(nbSpam, nbHam, "baseapp");
         System.out.println("Enregistrement du filtre avec les paramètres mSpam="+nbSpam+" mHam="+nbHam+" dans "+file.getAbsolutePath());
 
         try {
             FileWriter writer = new FileWriter(file);
-            writer.write("MOT;ProbaSpam;ProbaHam");
-            writer.write("\na priori;"+probaSpam+';'+probaHam);
+            writer.write("MOT;Spam;Ham");
+            writer.write("\nnb mail;"+nbSpam+';'+nbHam);
             for (int i = 0; i < dictionnaire.size(); i++){
                 writer.write("\n"+dictionnaire.get(i));
-                writer.write(";"+probasSpam[i]);
-                writer.write(";"+probasHam[i]);
+                writer.write(";"+ (int)probasSpam[i]);
+                writer.write(";"+ (int)probasHam[i]);
+                writer.flush();
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Bonus 1
+    public void saveApprentissage(int nbSpam, int nbHam, String out, String pathToBaseApp){
+        File file = new File(out);
+        apprentissage(nbSpam, nbHam, pathToBaseApp);
+        System.out.println("Enregistrement du filtre avec les paramètres mSpam="+nbSpam+" mHam="+nbHam+" dans "+file.getAbsolutePath());
+
+        try {
+            FileWriter writer = new FileWriter(file);
+            writer.write("MOT;Spam;Ham");
+            writer.write("\nnb mail;"+nbSpam+';'+nbHam);
+            for (int i = 0; i < dictionnaire.size(); i++){
+                writer.write("\n"+dictionnaire.get(i));
+                writer.write(";"+ (int)(probasSpam[i] * (nbSpam + 2*epsilon) - epsilon));
+                writer.write(";"+ (int)( probasHam[i] * (nbSpam + 2*epsilon) - epsilon));
                 writer.flush();
             }
             writer.close();
