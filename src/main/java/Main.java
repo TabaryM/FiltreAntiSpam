@@ -1,6 +1,5 @@
 import filtre.Filtre;
 
-import java.io.File;
 import java.util.Scanner;
 
 public class Main {
@@ -9,7 +8,8 @@ public class Main {
         //Evaluation
         if(args.length == 1){
             Filtre filtre = new Filtre();
-            filtre.evaluation(args[0]);
+            filtre.verbose = false;
+            filtre.maxFiltre("out/app0.csv");
         }
 
         //Lancement du programme
@@ -21,6 +21,7 @@ public class Main {
             int mHam = scanner.nextInt();
 
             Filtre filtre = new Filtre();
+            filtre.verbose = true;
             System.out.println("Apprentissage...");
             filtre.apprentissage(mSpam, mHam);
 

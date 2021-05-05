@@ -24,6 +24,8 @@ public class Filtre {
     private int nbErreurSpam = 0;
     private int nbErreurHam = 0;
 
+    public boolean verbose;
+
     public Filtre(){
         chargerDictionnaire(loadRessource("dictionnaire1000en.txt"));
     }
@@ -46,6 +48,7 @@ public class Filtre {
             e.printStackTrace();
             System.exit(-1);
         }
+        System.out.println("Dictionnaire chargé !");
     }
 
     /**
@@ -87,7 +90,7 @@ public class Filtre {
         for(int i = 0; i<mHam+mSpam; i++){
             numMail.add(i);
         }
-        Collections.shuffle(numMail);
+//        Collections.shuffle(numMail);
         BufferedReader reader;
 
         //Estimation des paramètres de distribution
@@ -140,9 +143,11 @@ public class Filtre {
         errTestSpam = ((float) nbErreurSpam/mSpam)*100;
         errTestHam = ((float) nbErreurHam/mHam)*100;
         errTestGlobale = ((float) (nbErreurHam + nbErreurSpam)/(mHam + mSpam))*100;
-        System.out.printf("Erreur de test sur les %d SPAM : \t%.2f %s \n", mSpam, errTestSpam, '%');
-        System.out.printf("Erreur de test sur les %d HAM : \t%.2f %s \n", mHam, errTestHam, '%');
-        System.out.printf("Erreur de test globale sur %d mails : \t%.2f %s \n", (mHam+mSpam), errTestGlobale, '%');
+        if(verbose) {
+            System.out.printf("Erreur de test sur les %d SPAM : \t%.2f %s \n", mSpam, errTestSpam, '%');
+            System.out.printf("Erreur de test sur les %d HAM : \t%.2f %s \n", mHam, errTestHam, '%');
+            System.out.printf("Erreur de test globale sur %d mails : \t%.2f %s \n", (mHam + mSpam), errTestGlobale, '%');
+        }
     }
 
     /**
@@ -162,7 +167,7 @@ public class Filtre {
             numMail.add(i);
         }
 
-        Collections.shuffle(numMail);
+//        Collections.shuffle(numMail);
 
         BufferedReader reader;
 
@@ -186,22 +191,22 @@ public class Filtre {
 
             //Évaluation
             if (spam) {
-                System.out.printf("SPAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
+                if (verbose) System.out.printf("SPAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
                 if(probaPosterioriSpam > probaPosterioriHam) {
-                    System.out.print(" => identifié comme un SPAM\n");
+                    if (verbose) System.out.print(" => identifié comme un SPAM\n");
                 }
                 else {
-                    System.out.print(" => identifié comme un HAM \033[31m*** ERREUR***\033[0m\n");
+                    if (verbose) System.out.print(" => identifié comme un HAM \033[31m*** ERREUR***\033[0m\n");
                     nbErreurSpam++;
                 }
             } else {
-                System.out.printf("HAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
+                if (verbose) System.out.printf("HAM numéro %d : P(Y=SPAM | X=x) = %e, P(Y=HAM |X=x) = %e", i, probaPosterioriSpam, probaPosterioriHam);
                 if(probaPosterioriSpam > probaPosterioriHam) {
-                    System.out.print(" => identifié comme un SPAM \033[31m*** ERREUR***\033[0m\n");
+                    if (verbose) System.out.print(" => identifié comme un SPAM \033[31m*** ERREUR***\033[0m\n");
                     nbErreurHam++;
                 }
                 else {
-                    System.out.print(" => identifié comme un HAM\n");
+                    if (verbose) System.out.print(" => identifié comme un HAM\n");
                 }
             }
         }
@@ -226,10 +231,11 @@ public class Filtre {
         }
 
         // La ressource n'est pas trouvée, on la cherche à la racine du programme
+        String filePath = new File(Url).getAbsolutePath();
         try {
-            reader = new BufferedReader(new FileReader(new File(Url).getAbsolutePath()));
+            reader = new BufferedReader(new FileReader(filePath));
         } catch (FileNotFoundException e) {
-            System.err.println("Le chemin vers la base de test n'est pas valide");
+            System.err.println("Le chemin vers la base de test n'est pas valide\n"+filePath);
             System.exit(-1);
         }
         return reader;
@@ -237,30 +243,51 @@ public class Filtre {
 
     /**
      * Lance l'évaluation de la classification pour différentes nombre de mails dans les bases d'apprentissage et de test
-     * @param cheminTest chemin vers le dossier de la base de test
      */
-    public void evaluation(String cheminTest) {
-        File evalRep = new File("evaluation");
-        if(!evalRep.exists())
-            evalRep.mkdir();
-        File evalFile = new File("evaluation/eval.txt");
-        try {
-            FileWriter writer = new FileWriter(evalFile);
-            writer.write("mSpam\tmHam\tm\tErreurSpam\tErreurHam\tErreurGlobale\n");
-            int mHam = 50;
-            while(mHam<=250) {
-                int mSpam = 0;
-                for (int i = 0; i < 5; i++) {
-                    mSpam += 50;
-                    launch(mSpam, mHam, cheminTest);
-                    writer.write(mSpam + "\t" + mHam + "\t" + (mSpam + mHam) + "\t" + errTestSpam + "\t" + errTestHam + "\t" + errTestGlobale + "\n");
-                }
-                mHam +=50;
+    public void maxFiltre(String saveApprentissage) {
+        // TODO : trouver le min pour errTestGlobale (ou errTestHam, car les faux-positif sont bien pires que les faux-négatifs)
+
+        System.out.println("Recherche des meilleurs paramètres pour la base d'apprentissage...");
+        int nbTestSpam, nbTestHam;
+        nbTestHam = nbTestSpam = 5;
+        int step = 50;
+        double[] erreursTestGlobal = new double[nbTestHam * nbTestSpam];
+        int mHam;
+        int mSpam;
+
+        mHam = step;
+        for (int i = 0; i < nbTestHam; i++) {
+            mSpam = step;
+            for (int j = 0; j < nbTestSpam; j++) {
+                launch(mSpam, mHam, "basetest");
+                erreursTestGlobal[i*nbTestHam + j] = errTestGlobale;
+//                System.out.printf("mSpam : %d\tmHam : %d\terrTestGlobale : %f\n", mSpam, mHam, errTestGlobale);
+                mSpam += step;
             }
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            mHam += step;
         }
+
+        // On trouve les paramètres d'apprentissage qui ont le meilleur résultat sur la base de test
+        int indiceMinSpam = -1, indiceMinHam = -1;
+        double minErr = Double.MAX_VALUE;
+        for (int i = 0; i < nbTestHam; i++) {
+            for (int j = 0; j < nbTestSpam; j++) {
+//                System.out.printf("i=%d\tj=%d\t(i*nbTestHam + j) = %d\terreursTestGlobal[i*nbTestHam + j] = %f\n",i , j, (i*nbTestHam + j), erreursTestGlobal[i*nbTestHam + j]);
+                if(erreursTestGlobal[i*nbTestHam + j] < minErr){
+                    indiceMinHam = i;
+                    indiceMinSpam = j;
+                    minErr = erreursTestGlobal[i*nbTestHam + j];
+                }
+            }
+        }
+
+        mSpam = (indiceMinSpam + 1) * step;
+        mHam = (indiceMinHam + 1) * step;
+//        System.out.printf("Meilleur indice Spam=%d\tHam=%d\n", indiceMinSpam, indiceMinHam);
+        System.out.printf("Meilleur indice : %d\tmSpam=%d\tmHam=%d\n",(indiceMinHam*nbTestHam + indiceMinSpam), mSpam, mHam);
+
+        // On enregistre l'apprentissage avec ces paramètres
+        saveApprentissage(mSpam, mHam, saveApprentissage);
     }
 
     /**
@@ -272,5 +299,59 @@ public class Filtre {
     private void launch(int mSpam, int mHam, String cheminTest){
         apprentissage(mSpam, mHam);
         test(mSpam, mHam, cheminTest);
+    }
+
+    public void validation(String pathToBaseEvaluation){
+        //apprentissage(mSpam, mHam, baseApp);
+        File evalFile = new File("out/eval.tsv");
+        int totalErrTestSpam = 0, totalErrTestHam = 0, totalErrTestGlobale = 0;
+        File baseTestHam = new File(pathToBaseEvaluation+"/ham");
+        File baseTestSpam = new File(pathToBaseEvaluation+"/spam");
+        int maxSpam = baseTestSpam.list().length;
+        int maxHam = baseTestHam.list().length;
+        int k = 7;
+        for (int i = 0; i < k; i++) {
+            int mHam = maxHam/k;
+            while(mHam <= maxHam) {
+                int mSpam = maxSpam/k;
+                while ((mSpam <= maxSpam)) {
+                    mSpam += maxHam/k;
+                    launch(mSpam, mHam, pathToBaseEvaluation);
+                    totalErrTestSpam += errTestSpam;
+                    totalErrTestHam += errTestHam;
+                    totalErrTestGlobale += errTestGlobale;
+                }
+                mHam += maxSpam/k;
+            }
+        }
+
+        try {
+            FileWriter writer = new FileWriter(evalFile);
+            writer.write("ErreurSpam\tErreurHam\tErreurGlobale\n");
+            writer.write(totalErrTestSpam/k + "\t" + totalErrTestHam/k + "\t" + totalErrTestGlobale/k + "\n");
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveApprentissage(int nbSpam, int nbHam, String out){
+        File file = new File(out);
+        apprentissage(nbSpam, nbHam);
+        System.out.println("Enregistrement du filtre avec les paramètres mSpam="+nbSpam+" mHam="+nbHam+" dans "+file.getAbsolutePath());
+
+        try {
+            FileWriter writer = new FileWriter(file);
+            writer.write("MOT;ProbaSpam;ProbaHam");
+            for (int i = 0; i < dictionnaire.size(); i++){
+                writer.write("\n"+dictionnaire.get(i));
+                writer.write(";"+probasSpam[i]);
+                writer.write(";"+probasHam[i]);
+                writer.flush();
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
