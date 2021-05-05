@@ -5,14 +5,24 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
 
-        //Evaluation
+        // Recherche meilleur apprentissage
         if(args.length == 1){
+            String pathToFiltre = args[0];
             Filtre filtre = new Filtre();
             filtre.verbose = false;
-            filtre.maxFiltre("out/app0.csv");
+            filtre.maxFiltre(pathToFiltre);
         }
 
-        //Lancement du programme
+        // Évaluation
+        else if (args.length == 2){
+            String pathToFiltre = args[0];
+            String pathToBaseEval = args[1];
+            Filtre filtre = new Filtre(pathToFiltre);
+            filtre.verbose = false;
+            filtre.validation(pathToBaseEval);
+        }
+
+        // Lancement du programme
         else if(args.length == 3) {
             Scanner scanner = new Scanner(System.in);
             System.out.print("Combien de SPAM dans la base d'apprentissage ? ");
@@ -31,6 +41,7 @@ public class Main {
 
         //Nombre d'arguments incorrect
         else{
+            // TODO : explication des trois possibilités de lancement
             System.err.println("Veuillez entrer les arguments suivants : \n- chemin de la base de test \n- nombre de spams dans la base d'apprentissage \n- nombre de hams dans la base d'apprentissage");
             System.exit(-1);
         }
