@@ -23,35 +23,28 @@ public class Filtre {
 
     public boolean verbose;
 
+    /**
+     * Constructeur du filtre à partir d'un dictionnaire
+     * Le dictionnaire chargé est fixe, il correspond au fichier dictionnaire1000en.txt
+     */
     public Filtre(){
         chargerDictionnaire(loadRessource("dictionnaire1000en.txt"));
     }
 
     /**
-     * Charge le dictionnaire donné en paramètre
-     * @param reader fichier texte comprenant les mots du dictionnaire
+     * Constructeur du filtre à partir d'un classifieur
+     * @param filtreParam chemin vers le fichier correspondant au filtre à charger
      */
-    public void chargerDictionnaire(BufferedReader reader){
-        dictionnaire.clear();
-        System.out.println("Chargement du dictionnaire...");
-        String line;
-        try{
-            while((line = reader.readLine()) != null){
-                if (line.length() >= 3){
-                    dictionnaire.add(line.toUpperCase());
-                }
-            }
-        } catch (IOException e){
-            e.printStackTrace();
-            System.exit(-1);
-        }
-        System.out.println("Dictionnaire chargé !");
-    }
-
     public Filtre(String filtreParam) {
         chargeClassifieur(loadRessource(filtreParam));
     }
 
+    /**
+     * Constructeur de filtre à partir d'un classifieur et permettant d'ajouter un mail à la base d'apprentissage
+     * @param pathToClassifieur chemin vers le fichier correspondant au filtre à charger
+     * @param pathToMail chemin vers le fichier correspondant au mail à charger
+     * @param spam indique si le mail fournit et un SPAM ou un HAM
+     */
     // Bonus 2
     public Filtre(String pathToClassifieur, String pathToMail, String spam) {
         BufferedReader reader = loadRessource(pathToClassifieur);
@@ -110,6 +103,31 @@ public class Filtre {
         saveApprentissage(mSpam, mHam, pathToClassifieur);
     }
 
+    /**
+     * Charge le dictionnaire donné en paramètre
+     * @param reader fichier texte comprenant les mots du dictionnaire
+     */
+    public void chargerDictionnaire(BufferedReader reader){
+        dictionnaire.clear();
+        System.out.println("Chargement du dictionnaire...");
+        String line;
+        try{
+            while((line = reader.readLine()) != null){
+                if (line.length() >= 3){
+                    dictionnaire.add(line.toUpperCase());
+                }
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+            System.exit(-1);
+        }
+        System.out.println("Dictionnaire chargé !");
+    }
+
+    /**
+     * Récupère les informations d'un classifieur à partir d'un fichier donné
+     * @param reader BufferedReader contenant toutes les informations du fichier classifieur
+     */
     private void chargeClassifieur(BufferedReader reader) {
         System.out.println("Chargement des paramètres du filtre");
         ArrayList<Double> spamProbas = new ArrayList<>();
@@ -220,6 +238,10 @@ public class Filtre {
         probaHam = 1-probaSpam;
     }
 
+    /**
+     * Lance la classification d'un mail
+     * @param pathToMail chemin vers le fichier correspondant au mail à étiqueter
+     */
     public void testUnique(String pathToMail) {
         BufferedReader reader = loadRessource(pathToMail);
         lireMessage(reader);
@@ -362,6 +384,8 @@ public class Filtre {
 
     /**
      * Lance l'évaluation de la classification pour différentes nombre de mails dans les bases d'apprentissage et de test
+     * Donne les paramètres mHam et mSpam fournissant la meilleur erreur globale d'apprentissage
+     * @param saveApprentissage chemin vers le fichier où sera enregistrer le classfieur avec les meilleurs paramètres trouvés
      */
     public void maxFiltre(String saveApprentissage) {
         System.out.println("Recherche des meilleurs paramètres pour la base d'apprentissage...");
@@ -424,6 +448,10 @@ public class Filtre {
         test(mSpam, mHam, cheminTest);
     }
 
+    /**
+     * Évalution k-fold du classfieur
+     * @param pathToBaseEvaluation chemin vers le répertoire correspondant à la base d'évaluation
+     */
     public void validation(String pathToBaseEvaluation){
         System.out.println("Début de l'évaluation par K-fold");
         File evalFile = new File("out/eval.tsv");
@@ -470,6 +498,13 @@ public class Filtre {
         }
     }
 
+    /**
+     * Lance la classification pour un type de mail donné (ham/spam)
+     * @param debut indice de mail où commencer le test
+     * @param fin indice de mail où terminer le test
+     * @param cheminTest chemin vers le répertoire correspondant à la base de test
+     * @param spam true si l'on classifie des spams
+     */
     private void testType(int debut, int fin, String cheminTest, boolean spam){
         System.out.println("début : "+debut+" fin : "+fin+" spam : "+spam);
         double probaPosterioriSpam;
@@ -527,9 +562,14 @@ public class Filtre {
     }
 
     // Bonus 2
+    /**
+     * Enregistre les données du classifieur dans un fichier
+     * @param nbSpam nombre de mails spam pris en compte dans la base d'apprentissage
+     * @param nbHam nombre de mails ham pris en compte dans la base d'apprentissage
+     * @param out nom du fichier où enregistrer ce classifieur
+     */
     public void saveApprentissage(int nbSpam, int nbHam, String out){
         File file = new File(out);
-//        apprentissage(nbSpam, nbHam, "baseapp");
         System.out.println("Enregistrement du filtre avec les paramètres mSpam="+nbSpam+" mHam="+nbHam+" dans "+file.getAbsolutePath());
 
         try {
@@ -549,6 +589,14 @@ public class Filtre {
     }
 
     // Bonus 1
+
+    /**
+     * Lance un apprentissage puis enregistre les données du classifieur dans un fichier
+     * @param nbSpam nombre de mails spam pris en compte dans la base d'apprentissage
+     * @param nbHam nombre de mails ham pris en compte dans la base d'apprentissage
+     * @param out nom du fichier où enregistrer ce classifieur
+     * @param pathToBaseApp chemin vers le répertoire correspondant à la base d'apprentissage
+     */
     public void saveApprentissage(int nbSpam, int nbHam, String out, String pathToBaseApp){
         File file = new File(out);
         apprentissage(nbSpam, nbHam, pathToBaseApp);

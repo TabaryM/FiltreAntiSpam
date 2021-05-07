@@ -57,6 +57,7 @@ public class Main {
                 System.out.println("Test :");
                 filtre.test(Integer.parseInt(args[1]), Integer.parseInt(args[2]), args[0]);
             } else {
+                //Sinon on ajoute un mail à la base d'apprentissage
                 new Filtre(args[0], args[1], args[2]);
             }
         }
