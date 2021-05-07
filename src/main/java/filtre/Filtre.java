@@ -419,10 +419,10 @@ public class Filtre {
         for (int i = 0; i < nbTestHam; i++) {
             for (int j = 0; j < nbTestSpam; j++) {
                 //System.out.printf("i=%d\tj=%d\t(i*nbTestHam + j) = %d\terreursTestGlobal[i*nbTestHam + j] = %f\n",i , j, (i*nbTestHam + j), erreursTestGlobal[i*nbTestHam + j]);
-                if(erreursTestGlobal[i*nbTestHam + j] < minErr){
+                if(erreursTestHam[i*nbTestHam + j] < minErr){
                     indiceMinHam = i;
                     indiceMinSpam = j;
-                    minErr = erreursTestGlobal[i*nbTestHam + j];
+                    minErr = erreursTestHam[i*nbTestHam + j];
                 }
             }
         }
@@ -439,13 +439,13 @@ public class Filtre {
 
     /**
      * Lance l'apprentissage suivie de la classification
-     * @param mSpam nombre de spams dans les bases d'apprentissage et de test
-     * @param mHam nombre de hams dans les bases d'apprentissage et de test
+     * @param mSpam nombre de spams dans la base d'apprentissage
+     * @param mHam nombre de hams dans la base d'apprentissage
      * @param cheminTest chemin vers le dossier de la base de test
      */
     private void launch(int mSpam, int mHam, String cheminTest){
         apprentissage(mSpam, mHam, "baseapp");
-        test(mSpam, mHam, cheminTest);
+        test(500, 500, cheminTest);
     }
 
     /**
@@ -493,6 +493,7 @@ public class Filtre {
             writer.write("ErreurSpam\tErreurHam\tErreurGlobale\n");
             writer.write(totalErrTestSpam/(float)mSpam + "\t" + totalErrTestHam/(float)mHam + "\t" + totalErrTestGlobale/(float)(mSpam+mHam) + "\n");
             writer.close();
+            System.out.println("Enregistrement de l'évaluation du filtre dans "+evalFile.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -589,7 +590,6 @@ public class Filtre {
     }
 
     // Bonus 1
-
     /**
      * Lance un apprentissage puis enregistre les données du classifieur dans un fichier
      * @param nbSpam nombre de mails spam pris en compte dans la base d'apprentissage
