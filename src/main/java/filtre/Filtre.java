@@ -506,7 +506,7 @@ public class Filtre {
      * @param spam true si l'on classifie des spams
      */
     private void testType(int debut, int fin, String cheminTest, boolean spam){
-        System.out.println("début : "+debut+" fin : "+fin+" spam : "+spam);
+//        System.out.println("début : "+debut+" fin : "+fin+" spam : "+spam);
         double probaPosterioriSpam;
         double probaPosterioriHam;
         int nbmail = fin - debut;

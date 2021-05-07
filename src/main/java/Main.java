@@ -39,9 +39,8 @@ public class Main {
             filtre.testUnique(mail);
         }
 
-        // Lancement du programme
         else if(args.length == 3) {
-            // Si les deux dernires paramètres sont des entiers, c'est qu'on l'analyse d'une base de mail
+            // Si les deux dernires paramètres sont des entiers, c'est qu'on fait l'analyse d'une base de mail
             if(args[1].matches("[0-9]*") && args[2].matches("[0-9]*")){
                 Scanner scanner = new Scanner(System.in);
                 System.out.print("Combien de SPAM dans la base d'apprentissage ? ");
@@ -57,7 +56,7 @@ public class Main {
                 System.out.println("Test :");
                 filtre.test(Integer.parseInt(args[1]), Integer.parseInt(args[2]), args[0]);
             } else {
-                //Sinon on ajoute un mail à la base d'apprentissage
+                // Sinon on ajoute un mail à la base d'apprentissage
                 new Filtre(args[0], args[1], args[2]);
             }
         }
@@ -65,7 +64,27 @@ public class Main {
         //Nombre d'arguments incorrect
         else{
             // TODO : explication des trois possibilités de lancement
-            System.err.println("Veuillez entrer les arguments suivants : \n- chemin de la base de test \n- nombre de spams dans la base d'apprentissage \n- nombre de hams dans la base d'apprentissage");
+            System.err.println("Veuillez entrer des arguments en suivant un des schémas suivant : \n");
+            System.err.println("Pour le test d'une base de test :" +
+                    "\n\tchemin vers la base de test" +
+                    "\n\tnombre de spam a tester" +
+                    "\n\tnombre de ham a tester\n");
+            System.err.println("Pour enregistrer un classifieur :" +
+                    "\n\tchemin vers le fichier classifieur enregistré" +
+                    "\n\tchemin vers la base d'apprentissage" +
+                    "\n\tnombre de spam à utiliser dans la base d'apprentissage" +
+                    "\n\tnmobre de ham à utiliser dans la base d'apprentissage\n");
+            System.err.println("Pour ajouter un mail à la base d'apprentissage :" +
+                    "\n\tchemin vers le classifieur existant" +
+                    "\n\tchemin vers le mail a ajouter" +
+                    "\n\ttype de mail (\"SPAM\" ou \"HAM\"\n");
+            System.err.println("Pour la création du meilleur classifieur avec la base d'apprentissage interne: " +
+                    "\n\tchemin vers le fichier classifieur enregistré\n");
+            System.err.println("Pour l'évaluation k-fold d'un classifieur existant :" +
+                    "\n\t-eval (pour indiquer que l'on effectue une evaluation" +
+                    "\n\tchemin vers le classifieur à évaluer" +
+                    "\n\tbase d'évaluation du classifieur (de préférence, plus de 3000 mails, dont 1500 SPAM et 1500 HAM minimum)\n");
+
             System.exit(-1);
         }
     }
