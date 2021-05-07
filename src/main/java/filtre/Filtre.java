@@ -456,8 +456,9 @@ public class Filtre {
         System.out.println("Début de l'évaluation par K-fold");
         File evalFile = new File("out/eval.tsv");
         int totalErrTestSpam = 0, totalErrTestHam = 0, totalErrTestGlobale = 0;
-        File baseEvalHam  = new File(getClass().getClassLoader().getResource(pathToBaseEvaluation+"/ham").getPath());
-        File baseEvalSpam  = new File(getClass().getClassLoader().getResource(pathToBaseEvaluation+"/spam").getPath());
+
+        File baseEvalHam  = new File(pathToBaseEvaluation+"/ham");
+        File baseEvalSpam  = new File(pathToBaseEvaluation+"/spam");
 
         int maxSpam = baseEvalSpam.list().length;
         int maxHam = baseEvalHam.list().length;
