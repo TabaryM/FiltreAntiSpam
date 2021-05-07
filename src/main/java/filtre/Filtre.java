@@ -376,7 +376,7 @@ public class Filtre {
         try {
             reader = new BufferedReader(new FileReader(filePath));
         } catch (FileNotFoundException e) {
-            System.err.println("Le chemin vers la base de test n'est pas valide\n"+filePath);
+            System.err.println("Le chemin fournit n'est pas valide\n"+filePath);
             System.exit(-1);
         }
         return reader;
@@ -418,7 +418,7 @@ public class Filtre {
         double minErr = Double.MAX_VALUE;
         for (int i = 0; i < nbTestHam; i++) {
             for (int j = 0; j < nbTestSpam; j++) {
-//                System.out.printf("i=%d\tj=%d\t(i*nbTestHam + j) = %d\terreursTestGlobal[i*nbTestHam + j] = %f\n",i , j, (i*nbTestHam + j), erreursTestGlobal[i*nbTestHam + j]);
+                //System.out.printf("i=%d\tj=%d\t(i*nbTestHam + j) = %d\terreursTestGlobal[i*nbTestHam + j] = %f\n",i , j, (i*nbTestHam + j), erreursTestGlobal[i*nbTestHam + j]);
                 if(erreursTestGlobal[i*nbTestHam + j] < minErr){
                     indiceMinHam = i;
                     indiceMinSpam = j;
@@ -434,7 +434,7 @@ public class Filtre {
                 , mSpam, mHam, erreursTestSpam[indiceMin], erreursTestHam[indiceMin], erreursTestGlobal[indiceMin]);
 
         // On enregistre l'apprentissage avec ces paramètres
-        saveApprentissage(mSpam, mHam, saveApprentissage);
+        saveApprentissage(mSpam, mHam, saveApprentissage, "baseapp");
     }
 
     /**
