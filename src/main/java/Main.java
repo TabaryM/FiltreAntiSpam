@@ -77,7 +77,7 @@ public class Main {
             System.err.println("Pour ajouter un mail à la base d'apprentissage :" +
                     "\n\tchemin vers le classifieur existant" +
                     "\n\tchemin vers le mail a ajouter" +
-                    "\n\ttype de mail (\"SPAM\" ou \"HAM\"\n");
+                    "\n\ttype de mail (\"SPAM\" ou \"HAM\")\n");
             System.err.println("Pour la création du meilleur classifieur avec la base d'apprentissage interne: " +
                     "\n\tchemin vers le fichier classifieur enregistré\n");
             System.err.println("Pour l'évaluation k-fold d'un classifieur existant :" +
